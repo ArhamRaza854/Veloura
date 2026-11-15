@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veloura | A New Dimension of Shopping</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <!-- Official Supabase Library -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --bg: #0a0508;
+      --surface: #140b11;
+      --surface-hover: #1f1119;
+      --primary: #d1b4ff;
+      --primary-strong: #b88eff;
+      --text: #f2eff4;
+      --text-muted: #9a8c96;
+      --border: rgba(209, 180, 255, 0.15);
+      --glass: rgba(20, 11, 17, 0.7);
+      --radius: 16px;
+      --font-display: 'Syne', sans-serif;
+      --font-body: 'Inter', sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    ::selection { background: var(--primary); color: var(--bg); }
+
+    .ambient {
+      position: fixed;
+      top: 0; left: 0; width: 100vw; height: 100vh;
+      pointer-events: none;
+      z-index: -1;
+      background: 
+        radial-gradient(circle at 15% 10%, rgba(184, 142, 255, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 85% 90%, rgba(209, 180, 255, 0.05) 0%, transparent 40%);
+    }
+
+    h1, h2, h3, .logo { font-family: var(--font-display); letter-spacing: -0.03em; }
+    
+    nav {
+      position: fixed;
+      top: 0; width: 100%;
+      padding: 24px 5%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--glass);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .logo-symbol {
+      width: 24px; height: 24px;
+      background: linear-gradient(135deg, var(--primary), #6b46c1);
+      clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 70%, 0 100%);
+      border-radius: 4px;
+    }
+
+    .nav-actions { display: flex; gap: 16px; align-items: center; }
+
+    .btn {
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary { background: var(--primary); color: var(--bg); }
+    .btn-primary:hover { background: var(--primary-strong); transform: translateY(-1px); }
+    .btn-outline { background: transparent; color: var(--text); border-color: var(--border); }
+    .btn-outline:hover { background: var(--surface); border-color: var(--primary); }
+
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      padding: 0 5%;
+      margin-top: 60px;
+    }
+
+    .hero-content { max-width: 800px; }
+    
+    .hero-tag {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 20px;
+      background: rgba(209, 180, 255, 0.1);
+      color: var(--primary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 24px;
+      border: 1px solid var(--border);
+    }
+
+    .hero h1 {
+      font-size: clamp(3rem, 8vw, 6rem);
+      line-height: 1.05;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+
+    .hero h1 span {
+      background: linear-gradient(to right, #fff, var(--primary));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--text-muted);
+      max-width: 500px;
+      margin-bottom: 40px;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 40px;
+      padding: 0 5%;
+    }
+
+    .section-header h2 { font-size: 2rem; }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 30px;
+      padding: 0 5% 100px;
+    }
+
+    .product-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: transform 0.3s ease, border-color 0.3s ease;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(209, 180, 255, 0.4);
+    }
+
+    .product-img {
+      width: 100%;
+      aspect-ratio: 4/5;
+      object-fit: cover;
+      border-bottom: 1px solid var(--border);
+      background: #1a1118;
+    }
+
+    .product-info {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+
+    .product-cat {
+      font-size: 0.75rem;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .product-name {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .product-price {
+      font-size: 1.125rem;
+      font-weight: 500;
+      margin-bottom: 20px;
+      margin-top: auto;
+    }
+
+    .add-to-cart {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s;
+    }
+
+    .add-to-cart:hover {
+      background: var(--primary);
+      color: var(--bg);
+      border-color: var(--primary);
+    }
+
+    .cart-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      backdrop-filter: blur(4px);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .cart-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .cart-drawer {
+      position: fixed;
+      top: 0; right: -400px; bottom: 0;
+      width: 100%; max-width: 400px;
+      background: var(--bg);
+      border-left: 1px solid var(--border);
+      z-index: 201;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .cart-drawer.open { right: 0; }
+
+    .cart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cart-items { flex: 1; overflow-y: auto; }
+    
+    .cart-item {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+    .cart-item img { width: 70px; height: 90px; object-fit: cover; border-radius: 8px; }
+    .cart-item-info { flex: 1; }
+    .cart-item-info h4 { font-size: 0.9rem; margin-bottom: 4px; }
+    .cart-item-info p { color: var(--primary); font-size: 0.9rem; }
+
+    .cart-footer {
+      padding-top: 24px;
+      border-top: 1px solid var(--border);
+    }
+    .cart-total {
+      display: flex;
+      justify-content: space-between;
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 5, 8, 0.85);
+      backdrop-filter: blur(8px);
+      z-index: 300;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s;
+    }
+    .modal-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .auth-modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      width: 100%;
+      max-width: 420px;
+      padding: 40px;
+      position: relative;
+      transform: translateY(20px);
+      transition: transform 0.3s;
+    }
+    .modal-overlay.open .auth-modal { transform: translateY(0); }
+
+    .close-modal {
+      position: absolute;
+      top: 20px; right: 20px;
+      background: none; border: none;
+      color: var(--text-muted);
+      font-size: 1.5rem; cursor: pointer;
+    }
+
+    .auth-modal h2 { margin-bottom: 8px; font-size: 1.75rem; }
+    .auth-modal p { color: var(--text-muted); margin-bottom: 24px; font-size: 0.9rem; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .form-group input {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-body);
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus { border-color: var(--primary); }
+
+    .auth-submit {
+      width: 100%;
+      padding: 14px;
+      background: var(--primary);
+      color: var(--bg);
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 8px;
+    }
+
+    .auth-switch {
+      text-align: center;
+      margin-top: 20px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .auth-switch a { color: var(--primary); cursor: pointer; text-decoration: none; }
+
+    .error-msg {
+      color: #ff6b6b;
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+      display: none;
+      background: rgba(255, 107, 107, 0.1);
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 107, 107, 0.2);
+    }
+
+    #dashboard-view { display: none; padding: 120px 5% 100px; min-height: 100vh; }
+    .dash-header { margin-bottom: 40px; }
+    .dash-header h1 { font-size: 2.5rem; margin-bottom: 8px; }
+    .dash-header p { color: var(--text-muted); }
+    
+    .dash-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .dash-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 32px;
+    }
+    .dash-card h3 { margin-bottom: 16px; font-size: 1.25rem; }
+
+    #toast {
+      position: fixed;
+      bottom: 30px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--primary); color: var(--bg);
+      padding: 12px 24px; border-radius: 30px;
+      font-weight: 600; font-size: 0.9rem;
+      opacity: 0; pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 999;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    @media (max-width: 768px) {
+      .nav-actions .btn-outline { display: none; }
+      .dash-grid { grid-template-columns: 1fr; }
+      .products-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+      .hero h1 { font-size: 3rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="ambient"></div>
+
+  <nav>
+    <div class="logo" onclick="window.location.reload()">
+      <div class="logo-symbol"></div>
+      VELOURA
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-outline" id="nav-auth-btn" onclick="openAuthModal()">Sign In</button>
+      <button class="btn btn-primary" id="nav-cart-btn" onclick="toggleCart()">Cart (<span id="cart-count">0</span>)</button>
+    </div>
+  </nav>
+
+  <div id="store-view">
+    <section class="hero">
+      <div class="hero-content">
+        <span class="hero-tag">New Collection</span>
+        <h1>A New Dimension of <span>Shopping.</span></h1>
+        <p>Discover curated physical and digital products for the modern lifestyle. Premium quality, delivered instantly or to your door.</p>
+        <button class="btn btn-primary" onclick="document.getElementById('shop').scrollIntoView({behavior: 'smooth'})">Shop the Collection</button>
+      </div>
+    </section>
+
+    <div class="section-header" id="shop">
+      <h2>Featured Products</h2>
+    </div>
+
+    <div class="products-grid" id="products-grid">
+      <p style="color: var(--text-muted); grid-column: 1/-1;">Loading collection...</p>
+    </div>
+  </div>
+
+  <div id="dashboard-view">
+    <div class="dash-header">
+      <h1>Welcome back, <span id="user-name" style="color: var(--primary);">User</span>.</h1>
+      <p>Manage your account, view your orders, and track your digital downloads.</p>
+    </div>
+    <div class="dash-grid">
+      <div class="dash-card">
+        <h3>Your Orders</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">You haven't placed any orders yet. Once you check out, they'll appear here.</p>
+      </div>
+      <div class="dash-card">
+        <h3>Digital Downloads</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Digital products will appear here instantly after purchase.</p>
+      </div>
+      <div class="dash-card" style="grid-column: 1/-1;">
+        <h3>Account Settings</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 16px;">Email: <span id="user-email"></span></p>
+        <button class="btn btn-outline" onclick="logout()" style="color: #ff6b6b; border-color: rgba(255,107,107,0.3);">Sign Out</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="cart-overlay" id="cart-overlay" onclick="toggleCart()"></div>
+  <div class="cart-drawer" id="cart-drawer">
+    <div class="cart-header">
+      <h3 style="font-size: 1.25rem;">Your Cart</h3>
+      <button style="background:none;border:none;color:var(--text-muted);font-size:1.5rem;cursor:pointer;" onclick="toggleCart()">&times;</button>
+    </div>
+    <div class="cart-items" id="cart-items"></div>
+    <div class="cart-footer">
+      <div class="cart-total">
+        <span>Total</span>
+        <span id="cart-total-price">$0.00</span>
+      </div>
+      <button class="btn btn-primary" style="width: 100%;" onclick="checkout()">Proceed to Checkout</button>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="auth-modal">
+    <div class="auth-modal">
+      <button class="close-modal" onclick="closeAuthModal()">&times;</button>
+      
+      <div id="login-form-container">
+        <h2>Welcome back</h2>
+        <p>Sign in to access your cart and saved items.</p>
+        <div class="error-msg" id="login-error"></div>
+        <form onsubmit="handleLogin(event)">
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="login-email" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="login-password" required>
+          </div>
+          <button type="submit" class="auth-submit" id="login-btn">Sign In</button>
+        </form>
+        <div class="auth-switch">
+          Don't have an account? <a onclick="toggleAuthForms()">Create one</a>
+        </div>
+      </div>
+
+      <div id="register-form-container" style="display: none;">
+        <h2>Create an account</h2>
+        <p>Join Veloura to save your cart across devices.</p>
+        <div class="error-msg" id="register-error"></div>
+        <form onsubmit="handleRegister(event)">
+          <div class="form-group">
+            <label>Full Name</label>
+            <input type="text" id="reg-name" required>
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="reg-email" required>
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="reg-password" required minlength="6">
+          </div>
+          <button type="submit" class="auth-submit" id="register-btn">Sign Up</button>
+        </form>
+        <div class="auth-switch">
+          Already have an account? <a onclick="toggleAuthForms()">Sign In</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast">Message</div>
+
+  <script>
+    const SUPABASE_URL = "https://ybicnkrkvhriyvsjrxs.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_RaWujcn_IFZ_B4Kx_7r9UA_deAsjvWS";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let currentUser = null;
+    let cart = []; 
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3000);
+    }
+
+    async function loadProducts() {
+      try {
+        const { data, error } = await supabase.from('products').select('*');
+        if (error) throw error;
+        
+        const grid = document.getElementById('products-grid');
+        if (!data || data.length === 0) {
+          grid.innerHTML = `<p style="color: var(--text-muted);">No products found.</p>`;
+          return;
+        }
+
+        grid.innerHTML = data.map(p => `
+          <div class="product-card">
+            <img src="${p.image_url}" alt="${p.name}" class="product-img" loading="lazy">
+            <div class="product-info">
+              <div class="product-cat">${p.category || 'Collection'}</div>
+              <div class="product-name">${p.name}</div>
+              <div class="product-price">$${parseFloat(p.price).toFixed(2)}</div>
+              <button class="add-to-cart" onclick="addToCart('${p.id}')">Add to Cart</button>
+            </div>
+          </div>
+        `).join('');
+      } catch (err) {
+        console.error("Product load error:", err);
+        document.getElementById('products-grid').innerHTML = `<div style="color:#ff6b6b; padding:20px;">Database Error: ${err.message}</div>`;
+      }
+    }
+
+    window.openAuthModal = () => document.getElementById('auth-modal').classList.add('open');
+    window.closeAuthModal = () => {
+      document.getElementById('auth-modal').classList.remove('open');
+      document.getElementById('login-error').style.display = 'none';
+      document.getElementById('register-error').style.display = 'none';
+    }
+    window.toggleAuthForms = () => {
+      const login = document.getElementById('login-form-container');
+      const reg = document.getElementById('register-form-container');
+      if (login.style.display === 'none') { login.style.display = 'block'; reg.style.display = 'none'; }
+      else { login.style.display = 'none'; reg.style.display = 'block'; }
+    }
+
+    window.handleRegister = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('register-btn');
+      const err = document.getElementById('register-error');
+      btn.textContent = "Creating..."; btn.disabled = true; err.style.display = 'none';
+
+      const email = document.getElementById('reg-email').value;
+      const password = document.getElementById('reg-password').value;
+      const name = document.getElementById('reg-name').value;
+
+      try {
+        const { error } = await supabase.auth.signUp({
+          email, password, options: { data: { full_name: name } }
+        });
+        if (error) throw error;
+        showToast("Check your email to confirm account!");
+        closeAuthModal();
+      } catch (error) {
+        err.textContent = error.message; err.style.display = 'block';
+      }
+      btn.textContent = "Sign Up"; btn.disabled = false;
+    }
+
+    window.handleLogin = async function(e) {
+      e.preventDefault();
+      const btn = document.getElementById('login-btn');
+      const err = document.getElementById('login-error');
+      btn.textContent = "Signing in..."; btn.disabled = true; err.style.display = 'none';
+
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        
+        currentUser = data.user;
+        closeAuthModal();
+        showToast("Welcome back!");
+        updateUIForUser();
+      } catch (error) {
+        err.textContent = error.message; err.style.display = 'block';
+      }
+      btn.textContent = "Sign In"; btn.disabled = false;
+    }
+
+    window.logout = async function() {
+      await supabase.auth.signOut();
+      currentUser = null;
+      showToast("Signed out");
+      updateUIForUser();
+    }
+
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      currentUser = session ? session.user : null;
+      updateUIForUser();
+    }
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      currentUser = session ? session.user : null;
+      updateUIForUser();
+    });
+
+    function updateUIForUser() {
+      const storeView = document.getElementById('store-view');
+      const dashView = document.getElementById('dashboard-view');
+      const authBtn = document.getElementById('nav-auth-btn');
+
+      if (currentUser) {
+        storeView.style.display = 'none';
+        dashView.style.display = 'block';
+        authBtn.textContent = "Dashboard";
+        authBtn.onclick = () => { storeView.style.display = 'none'; dashView.style.display = 'block'; };
+        
+        document.getElementById('user-name').textContent = currentUser.user_metadata?.full_name || "Member";
+        document.getElementById('user-email').textContent = currentUser.email;
+        loadCartFromDB();
+      } else {
+        storeView.style.display = 'block';
+        dashView.style.display = 'none';
+        authBtn.textContent = "Sign In";
+        authBtn.onclick = openAuthModal;
+        cart = [];
+        updateCartUI();
+      }
+    }
+
+    window.toggleCart = () => {
+      document.getElementById('cart-drawer').classList.toggle('open');
+      document.getElementById('cart-overlay').classList.toggle('open');
+    }
+
+    async function loadCartFromDB() {
+      if (!currentUser) return;
+      try {
+        let { data: cartData, error } = await supabase.from('carts').select('id').eq('user_id', currentUser.id).single();
+        
+        if (!cartData) {
+          const { data: newCart } = await supabase.from('carts').insert({ user_id: currentUser.id }).select('id').single();
+          cartData = newCart;
+        }
+
+        if (cartData) {
+          const { data: items } = await supabase.from('cart_items').select(`quantity, products (*)`).eq('cart_id', cartData.id);
+          if (items) {
+            cart = items.map(i => ({
+              product_id: i.products.id,
+              quantity: i.quantity,
+              product_data: i.products
+            }));
+            updateCartUI();
+          }
+        }
+      } catch (err) { console.error(err); }
+    }
+
+    window.addToCart = async function(productId) {
+      if (!currentUser) { showToast("Please sign in to add to cart."); openAuthModal(); return; }
+      try {
+        let { data: cartData } = await supabase.from('carts').select('id').eq('user_id', currentUser.id).single();
+        if (!cartData) {
+          const { data: newCart } = await supabase.from('carts').insert({ user_id: currentUser.id }).select('id').single();
+          cartData = newCart;
+        }
+
+        const existing = cart.find(i => i.product_id === productId);
+        if (existing) {
+          await supabase.from('cart_items').update({ quantity: existing.quantity + 1 }).eq('cart_id', cartData.id).eq('product_id', productId);
+        } else {
+          await supabase.from('cart_items').insert({ cart_id: cartData.id, product_id: productId, quantity: 1 });
+        }
+
+        showToast("Added to cart");
+        loadCartFromDB();
+      } catch(err) { console.error(err); showToast("Error adding to cart"); }
+    }
+
+    function updateCartUI() {
+      const count = cart.reduce((sum, item) => sum + item.quantity, 0);
+      document.getElementById('cart-count').textContent = count;
+      
+      const container = document.getElementById('cart-items');
+      if (cart.length === 0) {
+        container.innerHTML = `<p style="color: var(--text-muted); text-align: center; margin-top: 40px;">Your cart is empty.</p>`;
+        document.getElementById('cart-total-price').textContent = "$0.00";
+        return;
+      }
+
+      container.innerHTML = cart.map(item => `
+        <div class="cart-item">
+          <img src="${item.product_data.image_url}" alt="${item.product_data.name}">
+          <div class="cart-item-info">
+            <h4>${item.product_data.name}</h4>
+            <p>${item.quantity} &times; $${parseFloat(item.product_data.price).toFixed(2)}</p>
+          </div>
+        </div>
+      `).join('');
+
+      const total = cart.reduce((sum, item) => sum + (parseFloat(item.product_data.price) * item.quantity), 0);
+      document.getElementById('cart-total-price').textContent = "$" + total.toFixed(2);
+    }
+
+    window.checkout = () => {
+      if (!currentUser) { openAuthModal(); return; }
+      if (cart.length === 0) { showToast("Cart empty."); return; }
+      showToast("Checkout coming in Stage 2!");
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      loadProducts();
+      checkSession();
+    });
+  </script>
+</body>
+</html>
