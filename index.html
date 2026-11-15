@@ -537,9 +537,10 @@
   <div id="toast">Message</div>
 
   <script>
+    // 1. Initialize Supabase with a unique variable name to avoid conflicts
     const SUPABASE_URL = "https://ybicnkrkvhriyvsjrxs.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_RaWujcn_IFZ_B4Kx_7r9UA_deAsjvWS";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const velouraClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     let currentUser = null;
     let cart = []; 
@@ -551,9 +552,10 @@
       setTimeout(() => t.classList.remove('show'), 3000);
     }
 
+    // 2. Load Products
     async function loadProducts() {
       try {
-        const { data, error } = await supabase.from('products').select('*');
+        const { data, error } = await velouraClient.from('products').select('*');
         if (error) throw error;
         
         const grid = document.getElementById('products-grid');
@@ -579,6 +581,7 @@
       }
     }
 
+    // 3. Auth Logic
     window.openAuthModal = () => document.getElementById('auth-modal').classList.add('open');
     window.closeAuthModal = () => {
       document.getElementById('auth-modal').classList.remove('open');
@@ -603,7 +606,7 @@
       const name = document.getElementById('reg-name').value;
 
       try {
-        const { error } = await supabase.auth.signUp({
+        const { error } = await velouraClient.auth.signUp({
           email, password, options: { data: { full_name: name } }
         });
         if (error) throw error;
@@ -625,7 +628,7 @@
       const password = document.getElementById('login-password').value;
 
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await velouraClient.auth.signInWithPassword({ email, password });
         if (error) throw error;
         
         currentUser = data.user;
@@ -639,19 +642,19 @@
     }
 
     window.logout = async function() {
-      await supabase.auth.signOut();
+      await velouraClient.auth.signOut();
       currentUser = null;
       showToast("Signed out");
       updateUIForUser();
     }
 
     async function checkSession() {
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session } } = await velouraClient.auth.getSession();
       currentUser = session ? session.user : null;
       updateUIForUser();
     }
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    velouraClient.auth.onAuthStateChange((_event, session) => {
       currentUser = session ? session.user : null;
       updateUIForUser();
     });
@@ -680,6 +683,7 @@
       }
     }
 
+    // 4. Cart Logic
     window.toggleCart = () => {
       document.getElementById('cart-drawer').classList.toggle('open');
       document.getElementById('cart-overlay').classList.toggle('open');
@@ -688,15 +692,15 @@
     async function loadCartFromDB() {
       if (!currentUser) return;
       try {
-        let { data: cartData, error } = await supabase.from('carts').select('id').eq('user_id', currentUser.id).single();
+        let { data: cartData, error } = await velouraClient.from('carts').select('id').eq('user_id', currentUser.id).single();
         
         if (!cartData) {
-          const { data: newCart } = await supabase.from('carts').insert({ user_id: currentUser.id }).select('id').single();
+          const { data: newCart } = await velouraClient.from('carts').insert({ user_id: currentUser.id }).select('id').single();
           cartData = newCart;
         }
 
         if (cartData) {
-          const { data: items } = await supabase.from('cart_items').select(`quantity, products (*)`).eq('cart_id', cartData.id);
+          const { data: items } = await velouraClient.from('cart_items').select(`quantity, products (*)`).eq('cart_id', cartData.id);
           if (items) {
             cart = items.map(i => ({
               product_id: i.products.id,
@@ -712,17 +716,17 @@
     window.addToCart = async function(productId) {
       if (!currentUser) { showToast("Please sign in to add to cart."); openAuthModal(); return; }
       try {
-        let { data: cartData } = await supabase.from('carts').select('id').eq('user_id', currentUser.id).single();
+        let { data: cartData } = await velouraClient.from('carts').select('id').eq('user_id', currentUser.id).single();
         if (!cartData) {
-          const { data: newCart } = await supabase.from('carts').insert({ user_id: currentUser.id }).select('id').single();
+          const { data: newCart } = await velouraClient.from('carts').insert({ user_id: currentUser.id }).select('id').single();
           cartData = newCart;
         }
 
         const existing = cart.find(i => i.product_id === productId);
         if (existing) {
-          await supabase.from('cart_items').update({ quantity: existing.quantity + 1 }).eq('cart_id', cartData.id).eq('product_id', productId);
+          await velouraClient.from('cart_items').update({ quantity: existing.quantity + 1 }).eq('cart_id', cartData.id).eq('product_id', productId);
         } else {
-          await supabase.from('cart_items').insert({ cart_id: cartData.id, product_id: productId, quantity: 1 });
+          await velouraClient.from('cart_items').insert({ cart_id: cartData.id, product_id: productId, quantity: 1 });
         }
 
         showToast("Added to cart");
@@ -761,6 +765,7 @@
       showToast("Checkout coming in Stage 2!");
     }
 
+    // Init
     document.addEventListener("DOMContentLoaded", () => {
       loadProducts();
       checkSession();
