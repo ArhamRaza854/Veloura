@@ -7,7 +7,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-  <!-- Official Supabase Library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
@@ -422,6 +421,7 @@
       VELOURA
     </div>
     <div class="nav-actions">
+      <button class="btn btn-outline" id="nav-shop-btn" style="display: none;" onclick="showStore()">Shop</button>
       <button class="btn btn-outline" id="nav-auth-btn" onclick="openAuthModal()">Sign In</button>
       <button class="btn btn-primary" id="nav-cart-btn" onclick="toggleCart()">Cart (<span id="cart-count">0</span>)</button>
     </div>
@@ -450,6 +450,7 @@
     <div class="dash-header">
       <h1>Welcome back, <span id="user-name" style="color: var(--primary);">User</span>.</h1>
       <p>Manage your account, view your orders, and track your digital downloads.</p>
+      <button class="btn btn-primary" style="margin-top: 20px;" onclick="showStore()">Continue Shopping ↗</button>
     </div>
     <div class="dash-grid">
       <div class="dash-card">
@@ -610,7 +611,7 @@
           email, password, options: { data: { full_name: name } }
         });
         if (error) throw error;
-        showToast("Check your email to confirm account!");
+        showToast("Account created!");
         closeAuthModal();
       } catch (error) {
         err.textContent = error.message; err.style.display = 'block';
@@ -646,6 +647,7 @@
       currentUser = null;
       showToast("Signed out");
       updateUIForUser();
+      showStore(); // Go back to shop when logged out
     }
 
     async function checkSession() {
@@ -659,31 +661,44 @@
       updateUIForUser();
     });
 
+    // 4. View Switcher
+    window.showStore = function() {
+      document.getElementById('store-view').style.display = 'block';
+      document.getElementById('dashboard-view').style.display = 'none';
+      window.scrollTo(0, 0);
+    }
+
     function updateUIForUser() {
       const storeView = document.getElementById('store-view');
       const dashView = document.getElementById('dashboard-view');
       const authBtn = document.getElementById('nav-auth-btn');
+      const shopBtn = document.getElementById('nav-shop-btn');
 
       if (currentUser) {
-        storeView.style.display = 'none';
-        dashView.style.display = 'block';
         authBtn.textContent = "Dashboard";
         authBtn.onclick = () => { storeView.style.display = 'none'; dashView.style.display = 'block'; };
+        shopBtn.style.display = 'block';
         
         document.getElementById('user-name').textContent = currentUser.user_metadata?.full_name || "Member";
         document.getElementById('user-email').textContent = currentUser.email;
+        
+        // Default to showing the dashboard when they log in
+        storeView.style.display = 'none';
+        dashView.style.display = 'block';
+        
         loadCartFromDB();
       } else {
         storeView.style.display = 'block';
         dashView.style.display = 'none';
         authBtn.textContent = "Sign In";
         authBtn.onclick = openAuthModal;
+        shopBtn.style.display = 'none';
         cart = [];
         updateCartUI();
       }
     }
 
-    // 4. Cart Logic
+    // 5. Cart Logic
     window.toggleCart = () => {
       document.getElementById('cart-drawer').classList.toggle('open');
       document.getElementById('cart-overlay').classList.toggle('open');
